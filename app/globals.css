@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-primary: #08090a;
+    --bg-surface: #0e1115;
+    --bg-surface-elevated: #141820;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-hover: rgba(255, 255, 255, 0.16);
+    --accent-green: #22c55e;
+    --accent-green-bright: #3bf07b;
+  }
+
+  html,
+  body {
+    background-color: #08090a !important;
+    color: #f3f4f6;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100dvh;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Hide Next.js floating development indicator badge */
+nextjs-portal,
+[data-nextjs-dev-indicator],
+[data-nextjs-toast],
+div[data-nextjs-dialog-overlay] {
+  display: none !important;
+}
+
+/* Custom scrollbar for sleek developer aesthetic */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #08090a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #23272f;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #333a46;
+}
