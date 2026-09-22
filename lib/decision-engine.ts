@@ -55,3 +55,18 @@ export async function evaluateDecision(
   const data: DecisionContract = await response.json();
   return data;
 }
+
+export const EXAMPLE_DECISION_REQUEST: DecisionRequest = {
+  goal: "Execute wire transfer of $45,000 to primary logistics vendor.",
+  state: "User requested transaction from unknown IP address. Current transaction count: 4. Daily total so far: $12,000.",
+  actions: [
+    "Approve transaction and dispatch wire transfer",
+    "Request secondary multi-factor verification block",
+    "Decline transaction and freeze API session"
+  ],
+  policy: {
+    maxRetries: 3,
+    riskLevel: "high",
+    allowEscalation: true
+  }
+};

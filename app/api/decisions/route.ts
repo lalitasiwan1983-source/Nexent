@@ -1,29 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-interface ServerDecisionRecord {
-  id: string;
-  decisionId?: string;
-  projectId: string;
-  goal: string;
-  state?: string;
-  actions?: string[];
-  policy?: Record<string, unknown> | null;
-  decision: string;
-  allowed?: boolean;
-  status: 'allowed' | 'blocked' | 'failed' | 'verified' | 'rejected' | 'escalated';
-  confidence: number;
-  verification?: {
-    condition: string;
-  } | string;
-  fallback?: string;
-  provider?: string;
-  latency?: number;
-  executionTimeMs?: number;
-  createdAt: string;
-}
-
-// In-memory store for server-evaluated decisions (scoped to server runtime)
-const serverDecisions: ServerDecisionRecord[] = [];
+import { serverStore } from '@/lib/server-store';
+import { DecisionRecord as ServerDecisionRecord } from '@/lib/control-loop';
 
 export async function GET(req: NextRequest) {
   try {
@@ -44,7 +21,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Filter by project
-    let records = serverDecisions.filter((r) => r.projectId === projectId);
+    let records = serverStore.decisions.filter((r) => r.projectId === projectId);
 
     // Filter by status
     if (status !== 'all') {
@@ -188,7 +165,7 @@ export async function POST(req: NextRequest) {
       createdAt: now,
     };
 
-    serverDecisions.unshift(record);
+    serverStore.decisions.unshift(record);
 
     return NextResponse.json(record);
   } catch (err) {

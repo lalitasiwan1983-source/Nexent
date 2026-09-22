@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
@@ -19,6 +19,11 @@ export default function HomePage() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signup');
   const [docsModalOpen, setDocsModalOpen] = useState(false);
+  const [isBypassing, setIsBypassing] = useState(true);
+
+  useEffect(() => {
+    router.replace('/dashboard');
+  }, [router]);
 
   const handleOpenAuth = (mode: 'signin' | 'signup' = 'signup') => {
     if (mode === 'signin') {
@@ -31,6 +36,17 @@ export default function HomePage() {
   const handleOpenDocs = () => {
     setDocsModalOpen(true);
   };
+
+  if (isBypassing) {
+    return (
+      <div className="min-h-screen bg-[#08090a] flex items-center justify-center select-none">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-6 h-6 border-2 border-[#22c55e] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-mono text-neutral-500 tracking-wider">Redirecting to console...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#08090a] text-white flex flex-col selection:bg-[#22c55e]/30 selection:text-white">

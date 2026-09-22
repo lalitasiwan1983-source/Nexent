@@ -160,3 +160,33 @@ export function calculateRecoveryRate(recoveries: RecoveryRecord[]): string {
   const rate = Math.round((recoveredCount / recoveries.length) * 100);
   return `${rate}%`;
 }
+
+/**
+ * Fetches a single recovery record by its ID.
+ */
+export async function fetchRecoveryById(
+  projectId: string,
+  recoveryId: string
+): Promise<RecoveryRecord | null> {
+  if (!projectId || !recoveryId) return null;
+
+  try {
+    const response = await fetch(`/api/recoveries/${recoveryId}?projectId=${projectId}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data as RecoveryRecord;
+    }
+  } catch (err) {
+    console.warn('API fetch for single recovery failed:', err);
+  }
+
+  // Fallback to local storage
+  const records = getStoredRecoveries(projectId);
+  return records.find((r) => r.id === recoveryId) || null;
+}

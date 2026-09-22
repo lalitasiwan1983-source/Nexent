@@ -49,7 +49,7 @@ export function ProjectContext({
     };
   }, [isOpen]);
 
-  const currentName = activeProject?.name || 'My first agent';
+  const currentName = activeProject?.name || 'My first project';
 
   return (
     <div className="relative" ref={containerRef}>
@@ -85,8 +85,8 @@ export function ProjectContext({
           role="menu"
         >
           <div className="px-3 py-2 border-b border-white/[0.06]">
-            <p className="text-[11px] font-mono text-neutral-400 uppercase tracking-wider">
-              Active Projects
+            <p className="text-[11px] font-mono text-neutral-400 uppercase tracking-wider font-medium">
+              ACTIVE PROJECTS
             </p>
           </div>
 

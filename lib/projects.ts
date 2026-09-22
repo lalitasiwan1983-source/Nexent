@@ -17,6 +17,7 @@ export interface GeneratedKeyData {
 }
 
 const STORAGE_PROJECTS_KEY = 'nexent_projects';
+const STORAGE_ACTIVE_PROJECT_KEY = 'nexent_active_project_id';
 const STORAGE_PENDING_STEP_KEY = 'nexent_onboarding_pending';
 
 export function getStoredProjects(ownerId?: string): Project[] {
@@ -24,8 +25,17 @@ export function getStoredProjects(ownerId?: string): Project[] {
   try {
     const raw = localStorage.getItem(STORAGE_PROJECTS_KEY);
     const list: Project[] = raw ? JSON.parse(raw) : [];
-    if (!ownerId) return list;
-    return list.filter((p) => p.ownerId === ownerId);
+    
+    // Deduplicate by id to prevent duplicate entries
+    const uniqueMap = new Map<string, Project>();
+    for (const p of list) {
+      if (p && p.id && !uniqueMap.has(p.id)) {
+        uniqueMap.set(p.id, p);
+      }
+    }
+    const uniqueList = Array.from(uniqueMap.values());
+    if (!ownerId) return uniqueList;
+    return uniqueList.filter((p) => p.ownerId === ownerId);
   } catch {
     return [];
   }
@@ -47,9 +57,33 @@ export function saveProject(project: Project): void {
   }
 }
 
+export function getActiveProjectId(ownerId: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(`${STORAGE_ACTIVE_PROJECT_KEY}_${ownerId}`);
+  } catch {
+    return null;
+  }
+}
+
+export function setActiveProjectId(ownerId: string, projectId: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(`${STORAGE_ACTIVE_PROJECT_KEY}_${ownerId}`, projectId);
+  } catch (e) {
+    console.error('Failed to set active project ID:', e);
+  }
+}
+
 export function getActiveProject(ownerId: string): Project | null {
   const userProjects = getStoredProjects(ownerId);
-  return userProjects.length > 0 ? userProjects[0] : null;
+  if (userProjects.length === 0) return null;
+  const activeId = getActiveProjectId(ownerId);
+  if (activeId) {
+    const found = userProjects.find((p) => p.id === activeId);
+    if (found) return found;
+  }
+  return userProjects[0];
 }
 
 export function getPendingProjectId(ownerId: string): string | null {
@@ -76,7 +110,7 @@ export function setPendingProjectId(ownerId: string, projectId: string | null): 
 }
 
 export async function createNewProject(ownerId: string, name: string): Promise<Project> {
-  const cleanName = name.trim() || 'My first agent';
+  const cleanName = name.trim() || 'My first project';
   const id = 'proj_' + Math.random().toString(36).substring(2, 10);
   const now = new Date().toISOString();
 
@@ -90,6 +124,7 @@ export async function createNewProject(ownerId: string, name: string): Promise<P
   };
 
   saveProject(project);
+  setActiveProjectId(ownerId, id);
   setPendingProjectId(ownerId, id);
   return project;
 }

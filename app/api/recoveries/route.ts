@@ -1,20 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { serverStore } from '@/lib/server-store';
+import { RecoveryRecord } from '@/lib/control-loop';
 
 /**
  * PRODUCTION-READY RECOVERY ENDPOINT
  * 
- * This endpoint serves recovery events for a specific project.
- * In a production environment, this would query a persistent data store (e.g. Firestore).
- * 
- * GET /api/recoveries
- * Params:
- *  - projectId (required)
- *  - search
- *  - status
- *  - failureType
- *  - date
- *  - cursor
- *  - limit
+ * This endpoint serves and records recovery events for a specific project.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -28,22 +19,54 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // AUTHENTICATION & PROJECT OWNERSHIP CHECK
-    // In a real implementation, we would verify the user's session 
-    // and their access to the requested projectId here.
+    // Filter by project
+    const records = serverStore.recoveries.filter((r) => r.projectId === projectId);
 
-    // DATA RETRIEVAL
-    // For now, we return empty results as this is a new project setup.
-    // Real recovery events will be populated via the agent control loop.
-    
     return NextResponse.json({
-      recoveries: [],
+      recoveries: records,
       nextCursor: null,
-      totalCount: 0,
-      verificationFailuresCount: 0
+      totalCount: records.length,
+      verificationFailuresCount: records.filter((r) => r.failureType === 'Verification').length
     });
   } catch (err) {
     console.error('Recoveries API Error:', err);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { id, projectId, decisionId, failureType, failureReason, previousAction, attemptNumber, maxAttempts, recoveryAction, allowed, status, createdAt, updatedAt } = body;
+
+    if (!projectId) {
+      return NextResponse.json({ error: 'projectId is required' }, { status: 400 });
+    }
+
+    const record: RecoveryRecord = {
+      id: id || 'rec_' + Math.random().toString(36).substring(2, 10),
+      projectId,
+      decisionId,
+      failureType: failureType || 'Verification',
+      failureReason: failureReason || 'Verification failed: Expected condition not met.',
+      previousAction: previousAction || 'execute_task',
+      attemptNumber: attemptNumber || 2,
+      maxAttempts,
+      recoveryAction: recoveryAction || 'stop',
+      allowed: allowed !== false,
+      status: status || 'RECOVERED',
+      createdAt: createdAt || new Date().toISOString(),
+      updatedAt: updatedAt || new Date().toISOString(),
+    };
+
+    serverStore.recoveries.unshift(record);
+
+    return NextResponse.json(record);
+  } catch (err) {
+    console.error('Create Recovery API Error:', err);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }

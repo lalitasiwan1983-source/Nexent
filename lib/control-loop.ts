@@ -45,6 +45,8 @@ export interface RecoveryRecord {
   verificationCondition?: string;
   
   status: RecoveryStatus;
+  outcome?: string;
+  latency?: number;
   
   createdAt: string;
   updatedAt: string;
@@ -89,7 +91,7 @@ export function getDashboardMetrics(projectId: string): DashboardMetrics {
   const recoveryCount = recoveries.length;
 
   let successRate = '—';
-  if (decisionCount > 0) {
+  if (verifiedCount > 0 && decisionCount > 0) {
     const rate = Math.round((verifiedCount / decisionCount) * 100);
     successRate = `${rate}%`;
   }

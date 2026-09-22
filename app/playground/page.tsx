@@ -43,7 +43,7 @@ export default function PlaygroundPage() {
   const [goal, setGoal] = useState(EXAMPLE_DECISION_REQUEST.goal);
   const [stateText, setStateText] = useState(EXAMPLE_DECISION_REQUEST.state);
   const [actions, setActions] = useState<string[]>([...EXAMPLE_DECISION_REQUEST.actions]);
-  const [policy, setPolicy] = useState<DecisionPolicy>({
+  const [policy, setPolicy] = useState<DecisionPolicy | null>({
     ...EXAMPLE_DECISION_REQUEST.policy,
   });
 
@@ -122,7 +122,7 @@ export default function PlaygroundPage() {
         goal: goal.trim(),
         state: stateText.trim(),
         actions: sanitizedActions,
-        policy,
+        policy: policy || undefined,
       });
 
       setContract(evaluatedContract);
@@ -152,7 +152,7 @@ export default function PlaygroundPage() {
             failureReason: `Verification failed: Expected condition not met.`,
             previousAction: 'execute_task',
             attemptNumber: evaluatedContract.attempt,
-            maxAttempts: policy.maxRetries,
+            maxAttempts: policy?.maxRetries,
             recoveryAction: evaluatedContract.fallback,
             allowed: true,
             status: 'RECOVERED',
@@ -160,6 +160,12 @@ export default function PlaygroundPage() {
             updatedAt: now,
           };
           addRecoveryRecord(recoveryRecord);
+          // Sync with server-side database
+          void fetch('/api/recoveries', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(recoveryRecord),
+          }).catch((err) => console.error('Failed to sync recovery record with server:', err));
         }
       }
     } catch (err) {
@@ -211,7 +217,6 @@ export default function PlaygroundPage() {
               errors={errors}
               isRunning={isRunning}
               onRunDecision={handleRunDecision}
-              onLoadExample={handleLoadExample}
               onClear={handleClear}
             />
           </div>
