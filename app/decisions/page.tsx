@@ -1,177 +1,177 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  ArrowRight,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  Clock,
-  Terminal,
-  Trash2,
-} from 'lucide-react';
 import { getCurrentUser, AuthUser } from '@/lib/auth';
-import { getStoredProjects, Project } from '@/lib/projects';
-import {
-  getStoredDecisions,
-  DecisionRecord,
-  clearProjectActivity,
-} from '@/lib/control-loop';
+import { getActiveProject, Project } from '@/lib/projects';
+import { DecisionRecord } from '@/lib/control-loop';
+import { 
+  fetchDecisions, 
+  DecisionStatusFilter, 
+  DecisionDateFilter 
+} from '@/lib/decisions-api';
 import { AppShell } from '@/components/dashboard';
+import { DecisionsHeader } from '@/components/decisions/DecisionsHeader';
+import { DecisionFilters } from '@/components/decisions/DecisionFilters';
+import { DecisionTable } from '@/components/decisions/DecisionTable';
+import { MobileDecisionCards } from '@/components/decisions/MobileDecisionCards';
+import { Terminal, ArrowRight, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function DecisionsPage() {
   const router = useRouter();
-  const [user] = useState<AuthUser | null>(() => getCurrentUser());
+  const [user] = useState<AuthUser | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return getCurrentUser();
+  });
   const [activeProject] = useState<Project | null>(() => {
-    const current = getCurrentUser();
-    if (!current) return null;
-    const projects = getStoredProjects(current.id);
-    return projects.length > 0 ? projects[0] : null;
+    if (typeof window === 'undefined' || !user) {
+      const u = getCurrentUser();
+      return u ? getActiveProject(u.id) : null;
+    }
+    return getActiveProject(user.id);
   });
-  const [decisions, setDecisions] = useState<DecisionRecord[]>(() => {
-    const current = getCurrentUser();
-    if (!current) return [];
-    const projects = getStoredProjects(current.id);
-    return projects.length > 0 ? getStoredDecisions(projects[0].id) : [];
-  });
+  
+  // State for decisions and pagination
+  const [decisions, setDecisions] = useState<DecisionRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
 
+  // Filters
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<DecisionStatusFilter>('all');
+  const [dateFilter, setDateFilter] = useState<DecisionDateFilter>('all');
+
+  // Load initial context
   useEffect(() => {
-    if (!getCurrentUser()) {
+    if (!user) {
       router.replace('/login');
     }
-  }, [router]);
+  }, [user, router]);
 
-  const handleClear = () => {
+  // Fetch decisions based on filters
+  const loadDecisions = useCallback(async (isLoadMore = false) => {
     if (!activeProject) return;
-    clearProjectActivity(activeProject.id);
-    setDecisions([]);
-  };
 
-  const getStatusBadge = (status: DecisionRecord['status']) => {
-    switch (status) {
-      case 'verified':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-[#22c55e]/10 border border-[#22c55e]/25 text-[#22c55e]">
-            <CheckCircle2 className="w-3 h-3" />
-            <span>verified</span>
-          </span>
-        );
-      case 'escalated':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-amber-500/10 border border-amber-500/25 text-amber-400">
-            <AlertTriangle className="w-3 h-3" />
-            <span>escalated</span>
-          </span>
-        );
-      case 'rejected':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-rose-500/10 border border-rose-500/25 text-rose-400">
-            <XCircle className="w-3 h-3" />
-            <span>rejected</span>
-          </span>
-        );
+    if (isLoadMore) setIsFetchingMore(true);
+    else setIsLoading(true);
+
+    try {
+      const result = await fetchDecisions({
+        projectId: activeProject.id,
+        search,
+        status: statusFilter,
+        date: dateFilter,
+        cursor: isLoadMore ? nextCursor : null,
+        limit: 20
+      });
+
+      if (isLoadMore) {
+        setDecisions(prev => [...prev, ...result.decisions]);
+      } else {
+        setDecisions(result.decisions);
+      }
+      
+      setNextCursor(result.nextCursor);
+      setTotalCount(result.totalCount);
+    } catch (err) {
+      console.error('Failed to fetch decisions:', err);
+    } finally {
+      setIsLoading(false);
+      setIsFetchingMore(false);
+    }
+  }, [activeProject, search, statusFilter, dateFilter, nextCursor]);
+
+  // Reload when filters change (debounced search handled by user input if needed, but here simple)
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      loadDecisions(false);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [loadDecisions]);
+
+  const handleLoadMore = () => {
+    if (nextCursor && !isFetchingMore) {
+      loadDecisions(true);
     }
   };
 
   return (
     <AppShell user={user}>
-      <div className="space-y-6 max-w-5xl">
-        <div className="pb-6 border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <span className="text-[11px] font-mono tracking-widest uppercase text-[#22c55e] block mb-1.5 font-medium">
-              DECISIONS
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-              Agent Decision Log
-            </h1>
-            <p className="text-sm text-neutral-400 mt-1 max-w-xl">
-              Immutable audit log of all decisions evaluated and authorized for {activeProject?.name || 'your agent'}.
-            </p>
-          </div>
+      <div className="max-w-6xl mx-auto space-y-8 pb-20">
+        <DecisionsHeader />
 
-          <div className="flex items-center gap-3">
-            {decisions.length > 0 && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-rose-500/10 border border-white/10 hover:border-rose-500/30 text-xs text-neutral-300 hover:text-rose-400 transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Clear history</span>
-              </button>
-            )}
-            <Link
-              href="/playground"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#22c55e] hover:bg-[#25dc69] text-black font-semibold text-xs transition-colors"
-            >
-              <span>Test in Playground</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+        <div className="space-y-6">
+          <DecisionFilters 
+            search={search}
+            onSearchChange={setSearch}
+            status={statusFilter}
+            onStatusChange={setStatusFilter}
+            date={dateFilter}
+            onDateChange={setDateFilter}
+            disabled={isLoading}
+          />
+
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <Loader2 className="w-8 h-8 text-[#22c55e] animate-spin" />
+              <p className="text-xs font-mono text-neutral-500 uppercase tracking-widest">Retrieving logs...</p>
+            </div>
+          ) : decisions.length === 0 ? (
+            <div className="rounded-2xl bg-[#0d1015] border border-white/10 p-16 text-center space-y-5 shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center mx-auto">
+                <Terminal className="w-7 h-7 text-[#22c55e]" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-lg font-bold text-white uppercase tracking-tight">No decisions found</h3>
+                <p className="text-xs text-neutral-400 max-w-sm mx-auto leading-relaxed">
+                  {search || statusFilter !== 'all' || dateFilter !== 'all' 
+                    ? "Try adjusting your filters or search terms to find what you're looking for." 
+                    : "When your agent processes requests through Nexent, verified outcomes will be recorded here for inspection."}
+                </p>
+              </div>
+              {!search && statusFilter === 'all' && dateFilter === 'all' && (
+                <Link
+                  href="/playground"
+                  className="inline-flex items-center gap-2 text-xs font-semibold text-[#22c55e] hover:text-[#16a34a] transition-colors group"
+                >
+                  <span>Test your first decision</span>
+                  <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {/* Desktop Table */}
+              <DecisionTable decisions={decisions} />
+
+              {/* Mobile Cards */}
+              <MobileDecisionCards decisions={decisions} />
+
+              {/* Load More */}
+              {nextCursor && (
+                <div className="flex justify-center pt-4">
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={isFetchingMore}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs font-semibold text-neutral-300 hover:text-white hover:bg-white/10 transition-all disabled:opacity-50"
+                  >
+                    {isFetchingMore ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Loading more...</span>
+                      </>
+                    ) : (
+                      <span>Load more results</span>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-
-        {decisions.length === 0 ? (
-          <div className="rounded-xl bg-[#0d1015] border border-white/10 p-12 text-center space-y-4">
-            <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto text-neutral-400">
-              <Terminal className="w-5 h-5 text-[#22c55e]" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-base font-semibold text-white">No decisions logged yet</h3>
-              <p className="text-xs text-neutral-400 max-w-md mx-auto">
-                When your agent sends requests to the Nexent control layer, verified outcomes will be recorded here.
-              </p>
-            </div>
-            <Link
-              href="/playground"
-              className="inline-flex items-center gap-1.5 text-xs text-[#22c55e] hover:underline"
-            >
-              <span>Simulate your first decision</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        ) : (
-          <div className="rounded-xl bg-[#0d1015] border border-white/10 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-white/[0.06] text-[11px] font-mono text-neutral-400 uppercase bg-[#08090a]/50">
-                    <th className="px-5 py-3 font-normal">Decision ID</th>
-                    <th className="px-5 py-3 font-normal">Action</th>
-                    <th className="px-5 py-3 font-normal">Goal Context</th>
-                    <th className="px-5 py-3 font-normal">Status</th>
-                    <th className="px-5 py-3 font-normal">Confidence</th>
-                    <th className="px-5 py-3 font-normal text-right">Timestamp</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.04] text-xs">
-                  {decisions.map((row) => (
-                    <tr key={row.id} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="px-5 py-3 font-mono text-neutral-400">
-                        {row.id}
-                      </td>
-                      <td className="px-5 py-3 font-mono text-white font-medium">
-                        {row.decision}
-                      </td>
-                      <td className="px-5 py-3 text-neutral-300 max-w-xs truncate">
-                        {row.goal}
-                      </td>
-                      <td className="px-5 py-3">{getStatusBadge(row.status)}</td>
-                      <td className="px-5 py-3 font-mono text-neutral-300">
-                        {row.confidence}%
-                      </td>
-                      <td className="px-5 py-3 text-neutral-400 font-mono text-right flex items-center justify-end gap-1.5">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>{new Date(row.createdAt).toLocaleTimeString()}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
       </div>
     </AppShell>
   );

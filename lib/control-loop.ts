@@ -2,23 +2,52 @@
 
 export interface DecisionRecord {
   id: string;
+  decisionId?: string;
   projectId: string;
   goal: string;
+  state?: string;
+  actions?: string[];
+  policy?: Record<string, unknown> | null;
   decision: string;
-  status: 'verified' | 'rejected' | 'escalated';
+  allowed?: boolean;
+  status: 'verified' | 'rejected' | 'escalated' | 'allowed' | 'blocked' | 'failed';
   confidence: number;
-  createdAt: string;
+  verification?: {
+    condition: string;
+  } | string;
+  fallback?: string;
+  provider?: string;
+  latency?: number;
   executionTimeMs?: number;
+  createdAt: string;
 }
 
+export type RecoveryStatus = 'OPEN' | 'RECOVERED' | 'FAILED' | 'BLOCKED';
+export type FailureType = 'Execution' | 'Verification' | 'Policy' | 'External dependency' | 'Unknown';
+
 export interface RecoveryRecord {
-  id: string;
-  projectId: string;
+  id: string; // recoveryId
   decisionId?: string;
-  trigger: string;
-  fallbackAction: string;
-  status: 'recovered' | 'in_progress' | 'failed';
+  projectId: string;
+  
+  failureType: FailureType;
+  failureReason: string;
+  
+  previousAction?: string;
+  attemptNumber: number;
+  maxAttempts?: number;
+  
+  recoveryAction: string;
+  
+  allowed: boolean;
+  policy?: string;
+  
+  verificationCondition?: string;
+  
+  status: RecoveryStatus;
+  
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface DashboardMetrics {

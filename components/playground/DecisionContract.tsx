@@ -9,20 +9,10 @@ interface DecisionContractProps {
 }
 
 export function DecisionContract({ contract }: DecisionContractProps) {
-  const serializableContract = {
-    decision: contract.decision,
-    allowed: contract.allowed,
-    confidence: contract.confidence,
-    verification: {
-      condition: contract.verification.condition,
-    },
-    fallback: contract.fallback,
-    attempt: contract.attempt,
-  };
-
+  // Pass the actual returned contract without hardcoding
   return (
     <div className="space-y-4 pt-2">
-      <JsonViewer data={serializableContract} />
+      <JsonViewer data={contract as unknown as Record<string, unknown>} />
     </div>
   );
 }

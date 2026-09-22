@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { AlertTriangle, ArrowRight } from 'lucide-react';
 
 interface DecisionErrorStateProps {
   onRetry: () => void;
@@ -17,12 +17,15 @@ export function DecisionErrorState({ onRetry }: DecisionErrorStateProps) {
         <AlertTriangle className="w-6 h-6" />
       </div>
 
-      <div className="space-y-1 max-w-xs">
-        <h3 className="text-lg font-bold text-white tracking-tight">
-          Decision failed.
+      <div className="space-y-1.5 max-w-xs">
+        <span className="text-[10px] font-mono tracking-widest uppercase text-rose-400 font-semibold block">
+          DECISION FAILED
+        </span>
+        <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+          Nexent couldn&apos;t evaluate this request.
         </h3>
         <p className="text-xs text-neutral-400 leading-relaxed">
-          Nexent couldn&apos;t evaluate this request.
+          Please check your connection and parameters before retrying.
         </p>
       </div>
 
@@ -30,11 +33,11 @@ export function DecisionErrorState({ onRetry }: DecisionErrorStateProps) {
         <button
           type="button"
           onClick={onRetry}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/10 text-xs font-medium text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22c55e]"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/10 text-xs font-medium text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22c55e]"
           id="btn-retry-decision"
         >
-          <RotateCcw className="w-3.5 h-3.5 text-[#22c55e]" />
           <span>Try again</span>
+          <ArrowRight className="w-3.5 h-3.5 text-[#22c55e]" />
         </button>
       </div>
     </div>

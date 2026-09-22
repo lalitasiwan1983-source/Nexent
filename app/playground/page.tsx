@@ -148,10 +148,16 @@ export default function PlaygroundPage() {
             id: 'rec_' + Math.random().toString(36).substring(2, 9),
             projectId: activeProject.id,
             decisionId: decisionRecord.id,
-            trigger: `Verification rule: ${evaluatedContract.verification.condition.slice(0, 50)}`,
-            fallbackAction: evaluatedContract.fallback,
-            status: 'recovered',
+            failureType: 'Verification',
+            failureReason: `Verification failed: Expected condition not met.`,
+            previousAction: 'execute_task',
+            attemptNumber: evaluatedContract.attempt,
+            maxAttempts: policy.maxRetries,
+            recoveryAction: evaluatedContract.fallback,
+            allowed: true,
+            status: 'RECOVERED',
             createdAt: now,
+            updatedAt: now,
           };
           addRecoveryRecord(recoveryRecord);
         }

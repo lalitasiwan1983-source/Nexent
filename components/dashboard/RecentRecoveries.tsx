@@ -55,22 +55,22 @@ export function RecentRecoveries({ recoveries }: RecentRecoveriesProps) {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="text-rose-400 font-mono text-[11px] font-semibold">
-                    FAIL: {rec.trigger}
+                    FAIL: {rec.failureType}
                   </span>
                   <span className="text-neutral-500 font-sans">→</span>
                   <span className="text-[#22c55e] font-mono text-[11px]">
-                    {rec.fallbackAction}
+                    {rec.recoveryAction}
                   </span>
                 </div>
                 <p className="text-neutral-400 text-[11px]">
-                  Automated fallback policy executed successfully.
+                  {rec.failureReason.slice(0, 50)}{rec.failureReason.length > 50 ? '...' : ''}
                 </p>
               </div>
 
               <div className="flex items-center gap-3 shrink-0 font-mono text-[11px] text-neutral-400">
-                <span className="inline-flex items-center gap-1 text-[#22c55e]">
+                <span className={`inline-flex items-center gap-1 ${rec.status === 'RECOVERED' ? 'text-[#22c55e]' : 'text-neutral-500'}`}>
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>recovered</span>
+                  <span>{rec.status.toLowerCase()}</span>
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />

@@ -39,13 +39,9 @@ export function StateEditor({
         }`}
       />
 
-      {error ? (
+      {error && (
         <p className="text-xs text-rose-400 font-mono mt-1" role="alert">
           {error}
-        </p>
-      ) : (
-        <p className="text-[11px] text-neutral-500">
-          Example: <span className="text-neutral-400">Payment request timed out after 8 seconds. Customer has not been charged.</span>
         </p>
       )}
     </div>

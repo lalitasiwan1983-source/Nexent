@@ -22,7 +22,7 @@ export function RunDecisionButton({
       {isRunning ? (
         <>
           <Loader2 className="w-4 h-4 animate-spin text-black" />
-          <span>Evaluating...</span>
+          <span>Evaluating decision...</span>
         </>
       ) : (
         <>

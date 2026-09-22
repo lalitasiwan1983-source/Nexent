@@ -5,10 +5,9 @@ import { GoalInput } from './GoalInput';
 import { StateEditor } from './StateEditor';
 import { ActionList } from './ActionList';
 import { PolicyEditor } from './PolicyEditor';
-import { ExampleLoader } from './ExampleLoader';
 import { RunDecisionButton } from './RunDecisionButton';
 import { DecisionPolicy } from '@/lib/decision-engine';
-import { Shield } from 'lucide-react';
+import { Shield, RotateCcw } from 'lucide-react';
 
 interface DecisionInputProps {
   goal: string;
@@ -17,8 +16,8 @@ interface DecisionInputProps {
   setStateText: (val: string) => void;
   actions: string[];
   setActions: (actions: string[]) => void;
-  policy: DecisionPolicy;
-  setPolicy: (policy: DecisionPolicy) => void;
+  policy: DecisionPolicy | null;
+  setPolicy: (policy: DecisionPolicy | null) => void;
   errors: {
     goal?: string;
     state?: string;
@@ -26,8 +25,7 @@ interface DecisionInputProps {
   };
   isRunning: boolean;
   onRunDecision: (e: React.FormEvent) => void;
-  onLoadExample: () => void;
-  onClear: () => void;
+  onClear?: () => void;
 }
 
 export function DecisionInput({
@@ -42,13 +40,14 @@ export function DecisionInput({
   errors,
   isRunning,
   onRunDecision,
-  onLoadExample,
   onClear,
 }: DecisionInputProps) {
+  const isDirty = Boolean(goal || stateText || actions.length > 0 || policy);
+
   return (
     <div className="rounded-2xl bg-[#0d1015] border border-white/10 p-5 sm:p-7 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
+      <div className="flex items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
         <div>
           <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
             Decision input
@@ -58,11 +57,18 @@ export function DecisionInput({
           </p>
         </div>
 
-        <ExampleLoader
-          onLoadExample={onLoadExample}
-          onClear={onClear}
-          disabled={isRunning}
-        />
+        {isDirty && onClear && (
+          <button
+            type="button"
+            onClick={onClear}
+            disabled={isRunning}
+            className="text-xs font-mono text-neutral-500 hover:text-neutral-300 flex items-center gap-1.5 transition-colors focus:outline-none"
+            aria-label="Clear all fields"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>Clear</span>
+          </button>
+        )}
       </div>
 
       {/* Input Form */}
@@ -103,11 +109,11 @@ export function DecisionInput({
           <RunDecisionButton isRunning={isRunning} />
         </div>
 
-        {/* Section 12 Explanatory Note */}
+        {/* Explanatory Note */}
         <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-start gap-2.5 text-[11px] text-neutral-400 leading-relaxed">
           <Shield className="w-3.5 h-3.5 text-[#22c55e] shrink-0 mt-0.5" />
           <p>
-            <strong className="text-neutral-300 font-medium">Nexent decides the next safe action.</strong>{' '}
+            <strong className="text-neutral-300 font-medium">Nexent decides the next action.</strong>{' '}
             Your agent executes it.
           </p>
         </div>

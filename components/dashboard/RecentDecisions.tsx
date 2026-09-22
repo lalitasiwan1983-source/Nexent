@@ -2,14 +2,18 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowRight, CheckCircle2, AlertTriangle, XCircle, Clock } from 'lucide-react';
 import { DecisionRecord } from '@/lib/control-loop';
+import { getNormalizedStatus } from '@/lib/decisions-api';
 
 interface RecentDecisionsProps {
   decisions: DecisionRecord[];
 }
 
 export function RecentDecisions({ decisions }: RecentDecisionsProps) {
+  const router = useRouter();
+
   const formatTime = (dateStr: string) => {
     try {
       const d = new Date(dateStr);
@@ -19,34 +23,39 @@ export function RecentDecisions({ decisions }: RecentDecisionsProps) {
     }
   };
 
-  const getStatusBadge = (status: DecisionRecord['status']) => {
+  const getStatusBadge = (record: DecisionRecord) => {
+    const status = getNormalizedStatus(record);
     switch (status) {
-      case 'verified':
+      case 'Allowed':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-[#22c55e]/10 border border-[#22c55e]/25 text-[#22c55e]">
             <CheckCircle2 className="w-3 h-3" />
-            <span>verified</span>
+            <span>Allowed</span>
           </span>
         );
-      case 'escalated':
+      case 'Blocked':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-amber-500/10 border border-amber-500/25 text-amber-400">
             <AlertTriangle className="w-3 h-3" />
-            <span>escalated</span>
+            <span>Blocked</span>
           </span>
         );
-      case 'rejected':
+      case 'Failed':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-rose-500/10 border border-rose-500/25 text-rose-400">
             <XCircle className="w-3 h-3" />
-            <span>rejected</span>
+            <span>Failed</span>
           </span>
         );
     }
   };
 
+  const handleRowClick = (id: string) => {
+    router.push(`/decisions/${encodeURIComponent(id)}`);
+  };
+
   return (
-    <div className="rounded-xl bg-[#0d1015] border border-white/10 p-5 sm:p-6 space-y-4">
+    <div className="rounded-xl bg-[#0d1015] border border-white/10 p-5 sm:p-6 space-y-4 shadow-sm">
       {/* Section Header */}
       <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-white/[0.06]">
         <div className="flex items-center gap-2">
@@ -87,14 +96,18 @@ export function RecentDecisions({ decisions }: RecentDecisionsProps) {
               </thead>
               <tbody className="divide-y divide-white/[0.04] text-xs">
                 {decisions.slice(0, 5).map((row) => (
-                  <tr key={row.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="py-2.5 font-mono text-white font-medium">
+                  <tr 
+                    key={row.id} 
+                    onClick={() => handleRowClick(row.decisionId || row.id)}
+                    className="hover:bg-white/[0.02] transition-colors cursor-pointer group"
+                  >
+                    <td className="py-2.5 font-mono text-white font-medium group-hover:text-[#22c55e] transition-colors">
                       {row.decision}
                     </td>
-                    <td className="py-2.5 text-neutral-300 max-w-xs truncate">
+                    <td className="py-2.5 text-neutral-300 max-w-[180px] truncate">
                       {row.goal}
                     </td>
-                    <td className="py-2.5">{getStatusBadge(row.status)}</td>
+                    <td className="py-2.5">{getStatusBadge(row)}</td>
                     <td className="py-2.5 font-mono text-neutral-300">
                       {row.confidence}%
                     </td>
@@ -112,13 +125,14 @@ export function RecentDecisions({ decisions }: RecentDecisionsProps) {
             {decisions.slice(0, 4).map((row) => (
               <div
                 key={row.id}
-                className="p-3.5 rounded-lg bg-[#08090a] border border-white/[0.06] space-y-2"
+                onClick={() => handleRowClick(row.decisionId || row.id)}
+                className="p-3.5 rounded-lg bg-[#08090a] border border-white/[0.06] space-y-2 cursor-pointer active:bg-white/[0.04] transition-colors"
               >
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-semibold text-white">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-xs font-semibold text-white uppercase truncate">
                     {row.decision}
                   </span>
-                  {getStatusBadge(row.status)}
+                  {getStatusBadge(row)}
                 </div>
                 <p className="text-xs text-neutral-300 line-clamp-1">{row.goal}</p>
                 <div className="flex items-center justify-between pt-1 border-t border-white/[0.04] text-[11px] font-mono text-neutral-400">

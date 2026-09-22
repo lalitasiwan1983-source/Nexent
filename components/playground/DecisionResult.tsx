@@ -9,6 +9,7 @@ import { VerificationBlock } from './VerificationBlock';
 import { FallbackBlock } from './FallbackBlock';
 import { DecisionContract } from './DecisionContract';
 import { DecisionContract as IDecisionContract } from '@/lib/decision-engine';
+import { Shield } from 'lucide-react';
 
 interface DecisionResultProps {
   contract: IDecisionContract | null;
@@ -33,7 +34,7 @@ export function DecisionResult({
         <EmptyDecisionState />
       ) : (
         <div className="space-y-5 animate-in fade-in-50 duration-200">
-          {/* 1. Summary: Action, Allowed status, Confidence, Attempt */}
+          {/* 1. Summary: Action, Allowed status, Confidence, Latency */}
           <DecisionSummary contract={contract} />
 
           {/* 2. Verification Block */}
@@ -42,8 +43,14 @@ export function DecisionResult({
           {/* 3. Fallback Block */}
           <FallbackBlock fallback={contract.fallback} />
 
-          {/* 4. Decision Contract (JSON code panel with Copy button) */}
+          {/* 4. Decision Contract (Structured JSON code panel with Copy button) */}
           <DecisionContract contract={contract} />
+
+          {/* Permanent Product Distinction Note */}
+          <div className="pt-2 border-t border-white/[0.06] flex items-center gap-2 text-[11px] text-neutral-400 font-mono">
+            <Shield className="w-3.5 h-3.5 text-[#22c55e] shrink-0" />
+            <span>Nexent decides the next action. Your agent executes it.</span>
+          </div>
         </div>
       )}
     </div>

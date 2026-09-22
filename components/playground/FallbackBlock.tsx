@@ -13,7 +13,7 @@ export function FallbackBlock({ fallback }: FallbackBlockProps) {
       <div className="flex items-center gap-1.5">
         <RotateCcw className="w-3.5 h-3.5 text-neutral-400" />
         <span className="text-[10px] font-mono tracking-wider uppercase text-neutral-400 font-semibold">
-          FALLBACK PROCEDURE (ON VERIFICATION FAILURE)
+          FALLBACK
         </span>
       </div>
 

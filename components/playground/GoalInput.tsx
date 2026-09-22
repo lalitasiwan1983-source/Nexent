@@ -39,13 +39,9 @@ export function GoalInput({
         }`}
       />
 
-      {error ? (
+      {error && (
         <p className="text-xs text-rose-400 font-mono mt-1" role="alert">
           {error}
-        </p>
-      ) : (
-        <p className="text-[11px] text-neutral-500">
-          Example: <span className="text-neutral-400">Complete the customer&apos;s payment.</span>
         </p>
       )}
     </div>

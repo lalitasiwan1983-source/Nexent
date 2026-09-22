@@ -13,7 +13,7 @@ export function VerificationBlock({ condition }: VerificationBlockProps) {
       <div className="flex items-center gap-1.5">
         <ShieldCheck className="w-3.5 h-3.5 text-[#22c55e]" />
         <span className="text-[10px] font-mono tracking-wider uppercase text-neutral-400 font-semibold">
-          VERIFICATION CONDITION
+          VERIFICATION
         </span>
       </div>
 

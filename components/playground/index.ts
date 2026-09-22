@@ -2,7 +2,6 @@ export * from './GoalInput';
 export * from './StateEditor';
 export * from './ActionList';
 export * from './PolicyEditor';
-export * from './ExampleLoader';
 export * from './RunDecisionButton';
 export * from './DecisionInput';
 export * from './EmptyDecisionState';
